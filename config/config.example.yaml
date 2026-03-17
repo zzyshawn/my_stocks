@@ -1,0 +1,203 @@
+# ============================================================
+# My Stocks 全局配置文件模板
+# ============================================================
+# 复制此文件为 config.yaml 并填入实际配置值
+# ============================================================
+
+# 程序基本配置
+app:
+  name: "My Stocks"
+  version: "1.0.0"
+  debug: false
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+# ============================================================
+# 股票数据目录配置
+# ============================================================
+data:
+  # 数据根目录 (支持相对路径和绝对路径)
+  base_dir: "YOUR_DATA_DIR"  # 例如: "H:/股票信息/股票数据库/daban/股票数据"
+  # 概念成分清单文件
+  concept_file: "YOUR_CONCEPT_FILE"  # 例如: "H:/股票信息/股票数据库/daban/概念成分清单_合并.xlsx"
+
+  # 子目录配置（程序生成的数据）
+  directories:
+    cache: "cache"
+    backtest: "backtest"
+    knowledge: "knowledge"
+    logs: "logs"
+
+  # 股票目录下的子文件夹
+  stock_subdirs:
+    realtime: "realtime"
+
+# ============================================================
+# 文件夹命名规则配置
+# ============================================================
+naming:
+  folder:
+    pattern: "{symbol}"
+    use_market_subdir: false
+
+  files:
+    kline:
+      pattern: "{symbol}_{period}"
+      extension: ".xlsx"
+      period_map:
+        daily: "d"
+        min30: "30"
+        min5: "5"
+        weekly: "w"
+        monthly: "m"
+
+    cache:
+      pattern: "{symbol}_{type}_{date}"
+      extension: ".json"
+      date_format: "%Y%m%d"
+
+    report:
+      pattern: "{symbol}_report_{date}"
+      extension: ".md"
+      date_format: "%Y%m%d"
+
+    backtest:
+      pattern: "backtest_{strategy}_{start}_{end}"
+      extension: ".html"
+      date_format: "%Y%m%d"
+
+    knowledge:
+      pattern: "{symbol}_knowledge_{date}"
+      extension: ".md"
+      date_format: "%Y%m%d"
+
+    log:
+      pattern: "{name}_{date}"
+      extension: ".log"
+      date_format: "%Y%m%d"
+
+# ============================================================
+# 数据源配置
+# ============================================================
+data_source:
+  default: "akshare"
+  priority:
+    - "akshare"
+    - "tushare"
+    - "sina"
+    - "eastmoney"
+
+  watchlist:
+    dir: "YOUR_WATCHLIST_DIR"  # 例如: "H:/股票信息/监控清单"
+    file: "check_list.xlsx"
+
+  sources:
+    akshare:
+      enabled: true
+      timeout: 30
+      retry: 3
+    tushare:
+      enabled: true
+      token: ""  # 填入tushare token
+      timeout: 30
+      retry: 3
+    sina:
+      enabled: true
+      timeout: 10
+      retry: 2
+    eastmoney:
+      enabled: true
+      timeout: 15
+      retry: 2
+
+# ============================================================
+# 技术分析配置
+# ============================================================
+analysis:
+  ma_periods:
+    short: [5, 10]
+    medium: [20, 60]
+    long: [120, 250]
+
+  macd:
+    fast_period: 12
+    slow_period: 26
+    signal_period: 9
+
+  kdj:
+    n: 9
+    m1: 3
+    m2: 3
+
+  rsi_periods: [6, 12, 24]
+
+  bollinger:
+    period: 20
+    std_dev: 2
+
+# ============================================================
+# 决策配置
+# ============================================================
+decision:
+  signal_threshold:
+    strong_buy: 8
+    buy: 6
+    hold: 4
+    sell: 2
+    strong_sell: 1
+
+  stop_loss_pct: 0.05
+  take_profit_pct: 0.15
+
+# ============================================================
+# 通信配置
+# ============================================================
+communication:
+  feishu:
+    enabled: true
+    app_id: "YOUR_APP_ID"  # 飞书应用 ID
+    app_secret: ""  # 飞书应用密钥
+    webhook_url: "YOUR_WEBHOOK_URL"  # 飞书 Webhook 地址
+    secret: ""  # 签名密钥（可选）
+    timeout: 10
+    retry: 3
+
+  push:
+    enabled: true
+    min_strength: 6
+    signal_types:
+      - "强烈买入"
+      - "买入"
+      - "卖出"
+      - "强烈卖出"
+    quiet_hours:
+      enabled: false
+      start: "23:00"
+      end: "07:00"
+
+# ============================================================
+# 回测配置
+# ============================================================
+backtest:
+  initial_capital: 1000000
+  commission: 0.0003
+  stamp_tax: 0.001
+  slippage: 0.001
+
+# ============================================================
+# 缓存配置
+# ============================================================
+cache:
+  enabled: true
+  expire_seconds: 3600
+  realtime_expire: 60
+  history_expire: 86400
+
+# ============================================================
+# 日志配置
+# ============================================================
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  retention_days: 30
+  max_size_mb: 10
+  console_output: true
