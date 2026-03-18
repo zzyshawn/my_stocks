@@ -105,7 +105,8 @@ my_stocks/
 │   ├── knowledge/          # 知识总结模块
 │   │   ├── __init__.py
 │   │   ├── summary.py      # 知识总结
-│   │   └── storage.py      # 知识存储
+│   │   ├── storage.py      # Obsidian 存储
+│   │   └── templates.py    # 知识模板
 │   └── utils/              # 工具模块
 │       ├── __init__.py
 │       ├── config.py       # 配置管理
@@ -126,7 +127,10 @@ my_stocks/
 - [x] 项目结构搭建
 - [x] 配置管理模块
 - [ ] 日志系统
-- [ ] 数据获取模块基础框架
+- [x] 数据获取模块基础框架
+- [x] 数据更新模块 (data_updater.py, kline_fetcher.py, zt_pool_fetcher.py)
+- [x] 通信推送模块 (飞书通知)
+- [x] 知识总结模块
 
 ### 阶段二：核心功能（Week 3-4）
 - [ ] 实时数据获取
@@ -134,9 +138,9 @@ my_stocks/
 - [ ] 基础决策信号
 
 ### 阶段三：高级功能（Week 5-6）
-- [ ] 通信推送模块
+- [x] 通信推送模块
 - [ ] 回测模块
-- [ ] 知识总结模块
+- [x] 知识总结模块
 
 ### 阶段四：优化完善（Week 7-8）
 - [ ] 性能优化

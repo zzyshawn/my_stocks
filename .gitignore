@@ -63,3 +63,6 @@ cache/
 .env
 secrets.yaml
 *_secret.yaml
+
+# Demo directories (开发测试目录，不上传)
+*_demo/
