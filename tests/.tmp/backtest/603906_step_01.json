@@ -1,0 +1,95 @@
+{
+  "now": "2024-09-02 10:05:00",
+  "stock_code": "603906",
+  "user_id": "test_user",
+  "conversation_id": "test_conv",
+  "day": {
+    "kline_range": [
+      10.1,
+      10.8
+    ],
+    "time": [
+      "2024-09-02"
+    ],
+    "close": [
+      10.5
+    ],
+    "value": [
+      120
+    ],
+    "chanlun": {
+      "zs_range": [
+        9.8,
+        10.8
+      ],
+      "fx_times": [],
+      "fx_types": [],
+      "bi_times": [],
+      "bi_types": [],
+      "bi_values": []
+    },
+    "indicators": {
+      "MACD_DIF": [
+        0.2
+      ]
+    }
+  },
+  "min30": {
+    "kline_range": [
+      10.1,
+      10.4
+    ],
+    "time": [
+      "2024-09-02 10:05:00"
+    ],
+    "close": [
+      10.2
+    ],
+    "value": [
+      32
+    ],
+    "chanlun": {
+      "zs_range": [
+        10.0,
+        10.4
+      ],
+      "fx_times": [],
+      "fx_types": [],
+      "bi_times": [],
+      "bi_types": [],
+      "bi_values": []
+    },
+    "indicators": {
+      "RSI6": [
+        53
+      ]
+    }
+  },
+  "min5": {
+    "kline_range": [
+      10.08,
+      10.2
+    ],
+    "time": [
+      "2024-09-02 10:05:00"
+    ],
+    "close": [
+      10.12
+    ],
+    "value": [
+      6
+    ],
+    "chanlun": {
+      "zs_range": [
+        10.05,
+        10.2
+      ],
+      "fx_times": [],
+      "fx_types": [],
+      "bi_times": [],
+      "bi_types": [],
+      "bi_values": []
+    },
+    "indicators": {}
+  }
+}

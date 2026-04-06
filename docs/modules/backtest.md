@@ -1,64 +1,34 @@
-# 回测模块需求
+# 回测模块 (`my_stocks.src.backtest`)
 
-## 1. 功能描述
-使用历史数据验证交易策略的有效性。
+提供本地纯 Python 实现的事件驱动型回测引擎，支持因子策略与传统技术指标策略回测。
 
-## 2. 功能需求
+## 架构
 
-| 编号 | 需求项 | 优先级 | 描述 |
-|------|--------|--------|------|
-| R7.1 | 策略回测 | P0 | 支持对自定义策略进行历史回测 |
-| R7.2 | 收益计算 | P0 | 计算策略累计收益率、年化收益率 |
-| R7.3 | 风险指标 | P1 | 计算最大回撤、夏普比率等风险指标 |
-| R7.4 | 交易记录 | P0 | 生成详细交易记录 |
-| R7.5 | 可视化 | P1 | 支持回测结果可视化展示 |
-| R7.6 | 参数优化 | P2 | 支持策略参数优化 |
-| R7.7 | 基准对比 | P1 | 与沪深300等基准指数对比 |
-| R7.8 | 胜率统计 | P0 | 统计策略胜率和盈亏比 |
+- `BacktestEngine`: 核心回测引擎，负责行情步进、订单路由与状态保存。
+- `Portfolio`: 资金与持仓管理模块。
+- `Broker`: 模拟撮合系统，处理滑点和交易摩擦成分（印花税及佣金）。
+- `Strategy`: 抽象基类，用户需继承并实现 `init()` 和 `on_bar()`。
+- `BacktestReport`: 负责生成指标和Markdown格式分析报告。
 
-## 3. 回测报告内容
+## 使用示例
 
-### 3.1 基本信息
-- 回测时间区间
-- 初始资金
-- 最终资金
-- 总收益率
-- 年化收益率
+```python
+from src.data import load_kline
+from src.backtest import BacktestEngine, BacktestReport
+from src.backtest.strategies import MACrossStrategy
 
-### 3.2 风险指标
-- 最大回撤
-- 夏普比率
-- 波动率
-- Beta值
+df = load_kline("000001", "daily")
 
-### 3.3 交易统计
-- 总交易次数
-- 盈利次数/亏损次数
-- 胜率
-- 平均盈利/平均亏损
-- 盈亏比
+# 实例化引擎
+engine = BacktestEngine(symbol="000001", initial_capital=1000000)
+engine.set_data(df)
+engine.set_strategy(MACrossStrategy(fast=5, slow=20))
 
-## 4. 模块结构
+# 运行回测并获取结果
+result = engine.run()
+result.summary()
 
-```
-src/backtest/
-├── __init__.py
-├── engine.py           # 回测引擎
-└── report.py           # 报告生成
-```
-
-## 5. 配置参数
-
-回测参数可在配置文件中自定义：
-
-```yaml
-backtest:
-  # 初始资金
-  initial_capital: 1000000
-  # 手续费率
-  commission: 0.0003
-  # 印花税率
-  stamp_tax: 0.001
-  # 滑点
-  slippage: 0.001
+# 生成报告
+report = BacktestReport(result)
+report.to_markdown("backtest_000001.md")
 ```

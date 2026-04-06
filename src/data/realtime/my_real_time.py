@@ -249,19 +249,21 @@ def main_mutl():
     code_column = df[code_column_name]
     print(f"监控股票数量: {len(code_column)}")
     print(f"股票代码列表: {code_column.tolist()}")
+    
     while True:
-        current_time = datetime.datetime.now().strftime("%H:%M")
-
-        if current_time in time_list_0936:
-            position = time_list_0936.index(current_time)
-            print(f"\n当前时间 {current_time} 在时间列表中 (位置: {position})")
-            break
-        else:
-            now = datetime.datetime.now()
-            sleep_time = get_seconds_to_next_time(now, time_list_0936)
-            min_sleep = min(sleep_time, 30)
-            print(f"等待 {min_sleep} 秒...")
-            time.sleep(min_sleep + 1)
+        #current_time = datetime.datetime.now().strftime("%H:%M")
+        while True:
+            current_time = datetime.datetime.now().strftime("%H:%M")
+            if current_time in time_list_0936:
+                position = time_list_0936.index(current_time)
+                print(f"\n当前时间 {current_time} 在时间列表中 (位置: {position})")
+                break
+            else:
+                now = datetime.datetime.now()
+                sleep_time = get_seconds_to_next_time(now, time_list_0936)
+                min_sleep = min(sleep_time, 50)
+                print(f"2.等待 {min_sleep} 秒...")
+                time.sleep(min_sleep + 1)
 
         if should_execute():
             test1 = datetime.datetime.now()
@@ -291,7 +293,7 @@ def main_mutl():
             current_time_str = datetime.datetime.now().strftime("%H:%M:%S")
             time_str = f"{current_time_str}耗时：{int(use_time.total_seconds())}秒，共处理 {len(results)} 个代码"
             send_feishu_text(time_str)
-
+            print(f"1.等待 60 秒...")
             time.sleep(60)
 
 

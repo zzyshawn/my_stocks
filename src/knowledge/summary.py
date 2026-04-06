@@ -53,7 +53,8 @@ class KnowledgeSummarizer:
         self,
         session_type: str,
         content: Dict[str, Any],
-        auto_save: Optional[bool] = None
+        auto_save: Optional[bool] = None,
+        project: str = ""
     ) -> str:
         """
         总结会话知识
@@ -75,7 +76,8 @@ class KnowledgeSummarizer:
                 root_cause=content.get("root_cause", ""),
                 solution=content.get("solution", ""),
                 code_changes=content.get("code_changes", []),
-                auto_save=auto_save
+                auto_save=auto_save,
+                project=project
             )
         elif session_type == "pattern":
             return self.summarize_pattern(
@@ -83,7 +85,8 @@ class KnowledgeSummarizer:
                 description=content.get("description", ""),
                 code_example=content.get("code", ""),
                 use_cases=content.get("use_cases", []),
-                auto_save=auto_save
+                auto_save=auto_save,
+                project=project
             )
         else:
             # 通用编程知识
@@ -92,7 +95,8 @@ class KnowledgeSummarizer:
                 background=content.get("background", ""),
                 core_content=content.get("content", ""),
                 code_example=content.get("code", ""),
-                auto_save=auto_save
+                auto_save=auto_save,
+                project=project
             )
 
     def summarize_bug_fix(
@@ -101,7 +105,8 @@ class KnowledgeSummarizer:
         root_cause: str,
         solution: str,
         code_changes: Optional[List[str]] = None,
-        auto_save: Optional[bool] = None
+        auto_save: Optional[bool] = None,
+        project: str = ""
     ) -> str:
         """
         总结 Bug 修复经验
@@ -130,7 +135,8 @@ class KnowledgeSummarizer:
             self.storage.save_knowledge(
                 title=bug_description,
                 content=content,
-                category="bug"
+                category="bug" if not project else "问题记录",
+                project=project
             )
 
         return content
@@ -144,7 +150,8 @@ class KnowledgeSummarizer:
         pros: Optional[List[str]] = None,
         cons: Optional[List[str]] = None,
         related_patterns: Optional[List[str]] = None,
-        auto_save: Optional[bool] = None
+        auto_save: Optional[bool] = None,
+        project: str = ""
     ) -> str:
         """
         总结设计模式
@@ -179,7 +186,8 @@ class KnowledgeSummarizer:
             self.storage.save_knowledge(
                 title=pattern_name,
                 content=content,
-                category="pattern"
+                category="pattern" if not project else "架构设计",
+                project=project
             )
 
         return content
@@ -193,7 +201,8 @@ class KnowledgeSummarizer:
         related: Optional[List[str]] = None,
         scenarios: Optional[List[str]] = None,
         category: str = "python",
-        auto_save: Optional[bool] = None
+        auto_save: Optional[bool] = None,
+        project: str = ""
     ) -> str:
         """
         总结编程知识
@@ -227,7 +236,8 @@ class KnowledgeSummarizer:
             self.storage.save_knowledge(
                 title=title,
                 content=content,
-                category=category
+                category=category,
+                project=project
             )
 
         return content
@@ -240,7 +250,8 @@ class KnowledgeSummarizer:
         reason: str,
         result: Optional[str] = None,
         lessons: Optional[List[str]] = None,
-        auto_save: Optional[bool] = None
+        auto_save: Optional[bool] = None,
+        project: str = ""
     ) -> str:
         """
         总结股票决策
@@ -273,7 +284,8 @@ class KnowledgeSummarizer:
             self.storage.save_knowledge(
                 title=f"{symbol} {name} - {decision_type}决策",
                 content=content,
-                category="stock"
+                category="stock" if not project else "其他",
+                project=project
             )
 
         return content

@@ -37,11 +37,23 @@ def _fix_windows_encoding():
 _fix_windows_encoding()
 
 import concurrent.futures
+import logging
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
+
+# 配置日志
+logger = logging.getLogger("history_updater")
+logger.setLevel(logging.DEBUG)
+
+# 文件处理器 - 记录失败信息
+log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "history_update.log")
+file_handler = logging.FileHandler(log_file, encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(file_handler)
 
 # 支持直接运行和作为模块导入
 if __name__ == "__main__" and __package__ is None:
@@ -51,11 +63,13 @@ if __name__ == "__main__" and __package__ is None:
     from src.data.history.kline_fetcher import KLineFetcher
     from src.data.history.zt_pool_fetcher import ZtPoolFetcher
     from src.data.history.baostock_client import bs_login
+    from src.data.history_tdx.tdx_client import tdx_login
 else:
     from .globals import set_jin_ri, set_zt_list, get_zt_list
     from .kline_fetcher import KLineFetcher
     from .zt_pool_fetcher import ZtPoolFetcher
     from .baostock_client import bs_login
+    from ..history_tdx.tdx_client import tdx_login
 
 
 class DataUpdater:
@@ -67,7 +81,8 @@ class DataUpdater:
         concept_file: str,
         watchlist_dir: str,
         watchlist_file: str = "check_list.xlsx",
-        end_date: str = "2026-12-31"
+        end_date: str = "2026-12-31",
+        source: str = "tdx"
     ):
         """
         初始化数据更新器
@@ -78,15 +93,17 @@ class DataUpdater:
             watchlist_dir: 监控清单目录
             watchlist_file: 监控清单文件名
             end_date: 数据获取结束日期
+            source: 数据源 ('tdx' 或 'baostock')
         """
         self.data_dir = data_dir
         self.stock_data_dir = os.path.join(data_dir, "股票数据")
         self.concept_file = concept_file
         self.watchlist_path = os.path.join(watchlist_dir, watchlist_file)
+        self.source = source
 
         # 初始化子模块
         self.zt_fetcher = ZtPoolFetcher(data_dir, concept_file)
-        self.kline_fetcher = KLineFetcher(self.stock_data_dir, end_date)
+        self.kline_fetcher = KLineFetcher(self.stock_data_dir, end_date, source=source)
 
         # 状态
         self.today: str = ""
@@ -184,9 +201,11 @@ class DataUpdater:
         date_obj = datetime.strptime(self.today, '%Y%m%d')
         today_dash = date_obj.strftime('%Y-%m-%d')
 
-        # 登录 baostock
-        bs_login(0)
-        bs_login(1)
+        # 登录数据源
+        if self.source == 'tdx':
+            tdx_login(1)
+        else:
+            bs_login(1)
 
         start_time = datetime.now()
         results = []
@@ -204,14 +223,26 @@ class DataUpdater:
                 }
 
                 for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
-                    result = future.result()
+                    symbol = futures[future]
+                    try:
+                        result = future.result()
+                    except Exception as e:
+                        result = {
+                            "symbol": symbol,
+                            "success": False,
+                            "error": str(e)
+                        }
+                        logger.error(f"线程异常: {symbol} - {e}")
+
                     results.append(result)
 
                     if result["success"]:
                         success_count += 1
                     else:
                         fail_count += 1
-                        print(f"  失败: {result['symbol']} - {result.get('error', 'Unknown')}")
+                        error_msg = result.get('error', 'Unknown')
+                        print(f"  失败: {result['symbol']} - {error_msg}")
+                        logger.error(f"更新失败: {result['symbol']} - {error_msg}")
 
                     # 进度显示
                     progress = f"[{i}/{len(symbols)}]"
@@ -221,9 +252,15 @@ class DataUpdater:
                     if progress_callback:
                         progress_callback(i, len(symbols), result)
 
+        except Exception as e:
+            logger.error(f"批量更新异常: {e}")
+            raise
         finally:
-            # 登出 baostock
-            bs_login(0)
+            # 登出数据源
+            if self.source == 'tdx':
+                tdx_login(0)
+            else:
+                bs_login(0)
 
         # 统计
         use_time = datetime.now() - start_time
@@ -250,7 +287,7 @@ class DataUpdater:
 
         return self.stats
 
-    def run(self, days: int = 10, max_workers: int = 1) -> Dict:
+    def run(self, days: int = 20, max_workers: int = 1) -> Dict:
         """
         执行完整的数据更新流程
 
@@ -409,12 +446,21 @@ def create_updater_from_config() -> DataUpdater:
 # ============================================================
 
 if __name__ == "__main__":
-    # ============================================================
-    # 运行模式配置
-    # MODE = "debug"  # 测试模式：测试各功能，不下载K线
-    # MODE = "full"   # 完整模式：执行完整数据更新（包括K线下载）
-    # ============================================================
-    MODE = "full"
+    import argparse
+
+    parser = argparse.ArgumentParser(description="历史数据更新")
+    parser.add_argument("--debug", action="store_true", help="调试模式：测试各功能，不下载K线")
+    parser.add_argument("--full", action="store_true", help="完整模式：执行完整数据更新（包括K线下载）")
+
+    args = parser.parse_args()
+
+    # 根据参数设置模式
+    if args.debug:
+        MODE = "debug"
+    elif args.full:
+        MODE = "full"
+    else:
+        MODE = "full"  # 默认完整模式
 
     print("=" * 50)
     print(f"数据更新模块 [{MODE.upper()} 模式]")

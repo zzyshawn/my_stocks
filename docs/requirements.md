@@ -27,6 +27,7 @@
 | 通信模块 | [modules/communication.md](modules/communication.md) | 消息推送、通知管理 |
 | 回测模块 | [modules/backtest.md](modules/backtest.md) | 策略回测、报告生成 |
 | 知识总结模块 | [modules/knowledge.md](modules/knowledge.md) | 知识管理、经验积累 |
+| 量化投研模块 | [modules/quant.md](modules/quant.md) | QLib 数据桥接、因子提取、机器学习与原生回测执行 |
 
 ### 设计文档
 
@@ -34,6 +35,7 @@
 |------|------|------|
 | 配置设计 | [config.md](config.md) | 全局配置文件设计 |
 | 项目规划 | [project.md](project.md) | 非功能性需求、技术选型、项目结构、里程碑、风险评估 |
+| 全景进度 | [project_progress.md](project_progress.md) | 整个项目的全局进度跟踪与各需求模块实际完成度 |
 
 ---
 
@@ -53,9 +55,9 @@
 │  └─────────┘   └──────────┘   └──────────┘                 │
 │                      │                                      │
 │                      ▼                                      │
-│               ┌──────────┐                                  │
-│               │ 知识模块 │                                  │
-│               └──────────┘                                  │
+│               ┌──────────┐   ┌──────────┐                   │
+│               │ 知识模块 │   │ 量化模块 │                   │
+│               └──────────┘   └──────────┘                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -66,10 +68,12 @@
 ### 环境要求
 - Python 3.10+
 - 依赖库见 [requirements.txt](../requirements.txt)
+- QLib 源码环境部署 (挂载至 sys.path)
 
 ### 配置文件
 - 主配置：[config/config.yaml](../config/config.yaml)
 - 修改 `data.base_dir` 指向股票数据目录
+- 修改 `data.qlib_dir` 指向 QLib 二进制中心数据库
 
 ### 数据访问示例
 
@@ -87,6 +91,5 @@ path = config.get_kline_file_path("000001", "min30")
 
 ---
 
-*文档版本：v1.0*
-*创建日期：2026-03-17*
-*最后更新：2026-03-17*
+*文档版本：v1.2*
+*最后更新：2026-03-21*

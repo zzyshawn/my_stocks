@@ -19,8 +19,11 @@ except ImportError:
 class ObsidianStorage:
     """Obsidian 知识存储器"""
 
-    # 子目录列表
+    # 通用子目录列表（不限项目）
     SUBDIRS = ["python", "stock", "data", "bug", "pattern", "tool", "uncategorized"]
+
+    # 项目内子目录列表
+    PROJECT_SUBDIRS = ["数据获取", "问题记录", "架构设计", "回测策略", "实时数据", "其他"]
 
     def __init__(self, vault_path: Optional[str] = None):
         """
@@ -56,11 +59,18 @@ class ObsidianStorage:
 
         return Path(vault_path)
 
-    def _ensure_dirs(self) -> None:
+    def _ensure_dirs(self, project: str = "") -> None:
         """确保目录结构存在"""
         self.vault_path.mkdir(parents=True, exist_ok=True)
-        for subdir in self.SUBDIRS:
-            (self.vault_path / subdir).mkdir(parents=True, exist_ok=True)
+        if project:
+            # 项目级目录
+            project_dir = self.vault_path / project
+            project_dir.mkdir(parents=True, exist_ok=True)
+            for subdir in self.PROJECT_SUBDIRS:
+                (project_dir / subdir).mkdir(parents=True, exist_ok=True)
+        else:
+            for subdir in self.SUBDIRS:
+                (self.vault_path / subdir).mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def _sanitize_filename(name: str, max_length: int = 100) -> str:
@@ -95,6 +105,7 @@ class ObsidianStorage:
         content: str,
         tags: Optional[List[str]] = None,
         category: str = "",
+        project: str = "",
         source: str = "My_Stocks",
         status: str = "active",
         filename: Optional[str] = None
@@ -106,7 +117,8 @@ class ObsidianStorage:
             title: 知识标题
             content: 知识内容（Markdown 格式）
             tags: 标签列表
-            category: 分类（python/stock/data/bug/pattern/tool）
+            category: 分类（python/stock/data/bug/pattern/tool 或项目子分类）
+            project: 项目名称（如 my_stocks），为空时使用通用分类
             source: 来源
             status: 状态
             filename: 自定义文件名（不含扩展名）
@@ -114,7 +126,7 @@ class ObsidianStorage:
         Returns:
             保存的文件路径
         """
-        self._ensure_dirs()
+        self._ensure_dirs(project=project)
 
         # 生成文件名
         if not filename:
@@ -123,12 +135,16 @@ class ObsidianStorage:
             filename = f"{date_str}_{safe_title}"
 
         # 确定子目录
-        subdir = category if category in self.SUBDIRS else "uncategorized"
-        file_path = self.vault_path / subdir / f"{filename}.md"
+        if project:
+            subdir = category if category in self.PROJECT_SUBDIRS else "其他"
+            file_path = self.vault_path / project / subdir / f"{filename}.md"
+        else:
+            subdir = category if category in self.SUBDIRS else "uncategorized"
+            file_path = self.vault_path / subdir / f"{filename}.md"
 
         # 如果没有提供标签，使用分类默认标签
         if tags is None:
-            tags = KnowledgeTemplates.get_tags_for_category(category)
+            tags = KnowledgeTemplates.get_tags_for_category(category, project)
 
         # 生成完整内容
         full_content = create_knowledge_file(
@@ -136,6 +152,7 @@ class ObsidianStorage:
             content=content,
             tags=tags,
             category=category,
+            project=project,
             source=source,
             status=status
         )
@@ -302,6 +319,7 @@ class ObsidianStorage:
         self,
         tag: Optional[str] = None,
         category: Optional[str] = None,
+        project: Optional[str] = None,
         limit: int = 20
     ) -> List[Path]:
         """
@@ -310,6 +328,7 @@ class ObsidianStorage:
         Args:
             tag: 按标签过滤
             category: 按分类过滤
+            project: 按项目过滤
             limit: 返回数量限制
 
         Returns:
@@ -318,10 +337,24 @@ class ObsidianStorage:
         files = []
 
         # 确定搜索目录
-        if category and category in self.SUBDIRS:
+        if project:
+            project_dir = self.vault_path / project
+            if category and category in self.PROJECT_SUBDIRS:
+                search_dirs = [project_dir / category]
+            else:
+                search_dirs = [project_dir / s for s in self.PROJECT_SUBDIRS]
+        elif category and category in self.SUBDIRS:
             search_dirs = [self.vault_path / category]
         else:
+            # 搜索所有目录（通用 + 所有项目）
             search_dirs = [self.vault_path / s for s in self.SUBDIRS]
+            # 也搜索项目目录
+            for d in self.vault_path.iterdir():
+                if d.is_dir() and d.name not in self.SUBDIRS:
+                    for ps in self.PROJECT_SUBDIRS:
+                        sub = d / ps
+                        if sub.exists():
+                            search_dirs.append(sub)
 
         # 搜索文件
         for search_dir in search_dirs:

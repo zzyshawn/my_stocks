@@ -38,7 +38,8 @@ class KnowledgeTemplates:
         tags: List[str],
         source: str = "My_Stocks",
         status: str = "active",
-        date: Optional[str] = None
+        date: Optional[str] = None,
+        project: str = ""
     ) -> str:
         """
         生成 YAML frontmatter
@@ -58,12 +59,13 @@ class KnowledgeTemplates:
 
         tags_str = ", ".join(tags)
 
+        project_line = f"\nproject: {project}" if project else ""
         return f"""---
 title: {title}
 date: {date}
 tags: [{tags_str}]
 source: {source}
-status: {status}
+status: {status}{project_line}
 ---
 """
 
@@ -317,17 +319,21 @@ status: {status}
 """
 
     @classmethod
-    def get_tags_for_category(cls, category: str) -> List[str]:
+    def get_tags_for_category(cls, category: str, project: str = "") -> List[str]:
         """
         获取分类对应的标签
 
         Args:
             category: 分类名称
+            project: 项目名称
 
         Returns:
             标签列表
         """
-        return cls.CATEGORY_TAGS.get(category, ["#coding"])
+        tags = cls.CATEGORY_TAGS.get(category, ["#coding"])
+        if project:
+            tags = [f"#coding/{project}"] + tags
+        return tags
 
 
 def create_knowledge_file(
@@ -335,6 +341,7 @@ def create_knowledge_file(
     content: str,
     tags: List[str],
     category: str = "",
+    project: str = "",
     source: str = "My_Stocks",
     status: str = "active"
 ) -> str:
@@ -346,6 +353,7 @@ def create_knowledge_file(
         content: 知识内容（Markdown 格式）
         tags: 标签列表
         category: 分类
+        project: 项目名称
         source: 来源
         status: 状态
 
@@ -354,13 +362,14 @@ def create_knowledge_file(
     """
     # 如果没有提供标签，使用分类默认标签
     if not tags:
-        tags = KnowledgeTemplates.get_tags_for_category(category)
+        tags = KnowledgeTemplates.get_tags_for_category(category, project)
 
     frontmatter = KnowledgeTemplates.generate_frontmatter(
         title=title,
         tags=tags,
         source=source,
-        status=status
+        status=status,
+        project=project
     )
 
     return f"{frontmatter}\n{content}"

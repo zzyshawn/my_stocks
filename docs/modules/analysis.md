@@ -1,80 +1,31 @@
-# 技术分析模块需求
+# 技术分析与因子模块 (`my_stocks.src.analysis`)
 
-## 1. 功能描述
-基于股票数据进行多维度技术分析，生成技术指标和信号。
+提供经典技术指标计算以及类似 QLib 风格的 Alpha 因子挖掘。目前采用纯 pandas 和 numpy 实现，不依赖 TA-Lib。
 
-## 2. 功能需求
+## 子模块
 
-| 编号 | 需求项 | 优先级 | 描述 |
-|------|--------|--------|------|
-| R4.1 | 均线分析 | P0 | 计算MA5/MA10/MA20/MA60等均线指标 |
-| R4.2 | MACD指标 | P0 | 计算MACD、DIF、DEA指标 |
-| R4.3 | KDJ指标 | P0 | 计算K、D、J值 |
-| R4.4 | RSI指标 | P1 | 计算相对强弱指标RSI |
-| R4.5 | 布林带 | P1 | 计算布林带上中下轨 |
-| R4.6 | 成交量分析 | P1 | 分析成交量变化趋势 |
-| R4.7 | 形态识别 | P2 | 识别常见K线形态（头肩顶、双底等） |
-| R4.8 | 趋势判断 | P0 | 判断股票当前趋势（上涨/下跌/震荡） |
-| R4.9 | 支撑压力位 | P2 | 计算关键支撑位和压力位 |
+- `indicators.py`: 基础技术指标（MA, EMA, MACD, KDJ, RSI, BOLL, ATR, OBV）。
+- `factors.py`: 因子库及因子计算引擎 (`FactorEngine`)，支持内置因子。
+- `factor_analyzer.py`: 因子性能分析，包含单资产时序 IC 或多资产截面 IC 分析扩展设计。
 
-## 3. 指标计算参数
+## 使用示例
 
-### 3.1 均线指标
-- 短期均线：MA5, MA10
-- 中期均线：MA20, MA60
-- 长期均线：MA120, MA250
+### 技术指标
 
-### 3.2 MACD参数
-- 快线周期：12
-- 慢线周期：26
-- 信号线周期：9
+```python
+from src.analysis import ma, macd
 
-### 3.3 KDJ参数
-- N周期：9
-- M1周期：3
-- M2周期：3
-
-### 3.4 RSI参数
-- 周期：6, 12, 24
-
-## 4. 模块结构
-
-```
-src/analysis/
-├── __init__.py
-├── indicators.py       # 技术指标计算
-└── patterns.py         # 形态识别
+dif, dea, macd_bar = macd(df['收盘'])
+ma20 = ma(df['收盘'], 20)
 ```
 
-## 5. 配置参数
+### 因子引擎
 
-技术分析参数可在配置文件中自定义：
+```python
+from src.analysis import FactorEngine
 
-```yaml
-analysis:
-  # 均线配置
-  ma_periods:
-    short: [5, 10]
-    medium: [20, 60]
-    long: [120, 250]
-
-  # MACD配置
-  macd:
-    fast_period: 12
-    slow_period: 26
-    signal_period: 9
-
-  # KDJ配置
-  kdj:
-    n: 9
-    m1: 3
-    m2: 3
-
-  # RSI配置
-  rsi_periods: [6, 12, 24]
-
-  # 布林带配置
-  bollinger:
-    period: 20
-    std_dev: 2
+engine = FactorEngine()
+engine.load_builtin("alpha158")
+factor_df = engine.compute_all(df)
+print(factor_df.head())
 ```

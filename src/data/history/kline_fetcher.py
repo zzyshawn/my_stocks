@@ -43,24 +43,28 @@ import pandas as pd
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
     from src.data.history.baostock_client import bs_login, get_bao_data
+    from src.data.history_tdx.tdx_client import tdx_login, get_tdx_data
 else:
     from .baostock_client import bs_login, get_bao_data
+    from ..history_tdx.tdx_client import tdx_login, get_tdx_data
 
 
 class KLineFetcher:
     """K线数据获取器"""
 
-    def __init__(self, data_dir: str, end_date: str = "2026-12-31"):
+    def __init__(self, data_dir: str, end_date: str = "2026-12-31", source: str = "tdx"):
         """
         初始化K线获取器
 
         Args:
             data_dir: 股票数据根目录
             end_date: 数据获取结束日期
+            source: 数据源 ('tdx' 或 'baostock')
         """
         self.data_dir = data_dir
         self.end_date = end_date
         self.end_date_dash = end_date
+        self.source = source
         self._cache: Dict[str, pd.DataFrame] = {}
 
     def _get_stock_dir(self, symbol: str) -> str:
@@ -124,14 +128,14 @@ class KLineFetcher:
         existing_cols = [c for c in columns if c in df.columns]
         return df[existing_cols]
 
-    def fetch_daily_baostock(
+    def fetch_daily(
         self,
         symbol: str,
         start_date: str,
         end_date: str
     ) -> pd.DataFrame:
         """
-        从 baostock 获取日线数据
+        获取日线数据
 
         Args:
             symbol: 股票代码
@@ -142,13 +146,16 @@ class KLineFetcher:
             K线数据
         """
         try:
-            df = get_bao_data(symbol, 'd', start_date, end_date)
+            if self.source == 'tdx':
+                df = get_tdx_data(symbol, 'd', start_date, end_date)
+            else:
+                df = get_bao_data(symbol, 'd', start_date, end_date)
             return self._normalize_data(df, 'd')
         except Exception as e:
-            print(f"baostock 获取日线失败 {symbol}: {e}")
+            print(f"{self.source} 获取日线失败 {symbol}: {e}")
             return pd.DataFrame()
 
-    def fetch_minute_baostock(
+    def fetch_minute(
         self,
         symbol: str,
         start_date: str,
@@ -156,7 +163,7 @@ class KLineFetcher:
         period: str = "30"
     ) -> pd.DataFrame:
         """
-        从 baostock 获取分钟数据
+        获取分钟数据
 
         Args:
             symbol: 股票代码
@@ -168,10 +175,13 @@ class KLineFetcher:
             K线数据
         """
         try:
-            df = get_bao_data(symbol, period, start_date, end_date)
+            if self.source == 'tdx':
+                df = get_tdx_data(symbol, period, start_date, end_date)
+            else:
+                df = get_bao_data(symbol, period, start_date, end_date)
             return self._normalize_data(df, period)
         except Exception as e:
-            print(f"baostock 获取分钟线失败 {symbol}: {e}")
+            print(f"{self.source} 获取分钟线失败 {symbol}: {e}")
             return pd.DataFrame()
 
     def update_daily(self, symbol: str, today: str) -> pd.DataFrame:
@@ -210,7 +220,7 @@ class KLineFetcher:
 
             # 增量获取
             print(f"更新日线: {symbol} (从 {last_date})")
-            new_df = self.fetch_daily_baostock(symbol, last_date, self.end_date_dash)
+            new_df = self.fetch_daily(symbol, last_date, self.end_date_dash)
             if new_df.empty:
                 return old_df
 
@@ -219,7 +229,7 @@ class KLineFetcher:
         else:
             # 全量获取
             print(f"新建日线: {symbol}")
-            result_df = self.fetch_daily_baostock(symbol, '2024-01-01', self.end_date_dash)
+            result_df = self.fetch_daily(symbol, '2024-01-01', self.end_date_dash)
 
         # 保存
         if not result_df.empty:
@@ -273,7 +283,7 @@ class KLineFetcher:
 
             # 增量获取
             print(f"更新分钟{period}线: {symbol} (从 {last_date})")
-            new_df = self.fetch_minute_baostock(symbol, last_date, self.end_date_dash, period)
+            new_df = self.fetch_minute(symbol, last_date, self.end_date_dash, period)
             if new_df.empty:
                 return old_df
 
@@ -282,12 +292,12 @@ class KLineFetcher:
         else:
             # 全量获取
             print(f"新建分钟{period}线: {symbol}")
-            result_df = self.fetch_minute_baostock(symbol, '2024-01-01', self.end_date_dash, period)
+            result_df = self.fetch_minute(symbol, '2024-01-01', self.end_date_dash, period)
 
         # 保存
         if not result_df.empty:
             result_df.to_excel(file_path, index=False)
-            time.sleep(0.5)
+            time.sleep(0.1)
 
         return result_df
 
@@ -309,7 +319,7 @@ class KLineFetcher:
 
         # 30分钟线
         results['30'] = self.update_minute(symbol, today, "30")
-        time.sleep(1)
+        
 
         # 5分钟线
         results['5'] = self.update_minute(symbol, today, "5")
